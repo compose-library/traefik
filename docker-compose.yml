@@ -1,10 +1,44 @@
-version: '3.5'
+version: "3.5"
 
 services:
-  db:
-    image: postgres:alpine
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: example
+  traefik:
+    image: "traefik:alpine"
+    container_name: "traefik"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Only needed if you enable admin
     volumes:
-      - ./postgresql_data:/var/lib/postgresql/data
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    restart: always
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--api"
+    labels:
+      # Enable Traefik
+      - "traefik.enable=true"
+
+      # create a redirect middleware named `redirect-to-https`
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      # catch all unsecure `web` traffic and redirect to https
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
+
+      # create a middleware for authorization named `basic-auth` (for admin)
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${AUTH_USERNAME}:${AUTH_PASSWORD}"
+
+      # expose dashboard and api (for admin)
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure,web"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth@docker"
