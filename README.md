@@ -10,7 +10,7 @@
 version: "3.5"
 
 services:
-  server:
+  frontend:
     image: nginx:alpine
     networks:
       - traefik

@@ -22,21 +22,21 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
       - "--api"
     labels:
-      # Enable Traefik
-      - "traefik.enable=true"
-
-      # create a redirect middleware named `redirect-to-https`
+      # Create a redirect middleware named `redirect-to-https`
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
-      # catch all unsecure `web` traffic and redirect to https
+      # Catch all unsecure `web` traffic and redirect to https
       - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
       - "traefik.http.routers.http-catchall.entrypoints=web"
       - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
 
-      # create a middleware for authorization named `basic-auth` (for admin)
+      # Create a middleware for authorization named `basic-auth` (for admin)
       - "traefik.http.middlewares.dashboard-auth.basicauth.users=${AUTH_USERNAME}:${AUTH_PASSWORD}"
 
-      # expose dashboard and api (for admin)
+      # Enable Traefik (for admin)
+      - "traefik.enable=true"
+
+      # Expose dashboard and api (for admin)
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.dashboard.entrypoints=websecure,web"
