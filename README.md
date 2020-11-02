@@ -19,7 +19,7 @@ services:
       - "traefik.http.routers.sample.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.sample.entrypoints=websecure,web"
       - "traefik.http.routers.sample.service=service-sample"
-      - "traefik.docker.network=gateway"
+      - "traefik.docker.network=traefik"
       - "traefik.http.routers.sample.tls.certresolver=letsencrypt"
       - "traefik.http.services.service-sample.loadbalancer.server.port=80"
 
